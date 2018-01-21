@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Sandbox</title>
+    <link href="https://getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="https://getbootstrap.com/docs/4.0/examples/album/album.css" rel="stylesheet">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script>
+        function update_image(url){
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.responseType = "blob";
+            xhr.onload = function() {
+                if (this.status == 200) {
+                    var blob = this.response;
+                    var img = document.createElement("img");
+                    img.onload = function(e) {
+                        window.URL.revokeObjectURL(img.src);
+                    };
+                    img.src = window.URL.createObjectURL(blob);
+                    $("#div1").html(img);
+                }
+            }
+            xhr.send();
+        }
+    </script>
+    <script>
+        function getMousePos(event) {
+            var e = event || window.event;
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/click', true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.responseType = "blob";
+            xhr.onload = function() {
+                if (this.status == 200) {
+                    var blob = this.response;
+                    var img = document.createElement("img");
+                    img.onload = function(e) {
+                        window.URL.revokeObjectURL(img.src);
+                    };
+                    img.src = window.URL.createObjectURL(blob);
+                    $("#div1").html(img);
+                }
+            }
+            xhr.send(JSON.stringify({
+                    'x': e.screenX,
+                    'y': e.screenY
+                }));
+        }
+    </script>
+
+</head>
+
+<body>
+   <header>
+          <div class="navbar navbar-dark bg-dark">
+            <div class="container d-flex justify-content-between">
+              <a href="https://www.facebook.com" class="navbar-brand">Bored?</a>
+              <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+              </button>
+            </div>
+          </div>
+        </header>
+    <main role="main" class="container" style="padding-top: 1rem;">
+        <div class="row">
+            <div class="card" style="margin-top: auto;">
+                <div style="margin-left: 1rem; margin-right: 1rem; margin-top: 1rem;" id="div1" onclick="getMousePos()">
+                    <img src="{{ url_for('image') }}">
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary" type="button" onclick="update_image('/test')">Binary</button>
+                    <button class="btn btn-primary" type="button" onclick="update_image('/image')">Origin</button>
+                    <button class="btn btn-primary" type="button" onclick="update_image('/egde')">Edge Detection</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
