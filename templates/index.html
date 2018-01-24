@@ -8,6 +8,10 @@
 
     <link href="https://getbootstrap.com/docs/4.0/examples/album/album.css" rel="stylesheet">
 
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script>
         function update_image(url){
@@ -59,7 +63,7 @@
    <header>
           <div class="navbar navbar-dark bg-dark">
             <div class="container d-flex justify-content-between">
-              <a href="https://www.facebook.com" class="navbar-brand">Bored?</a>
+              <a href="https://www.facebook.com" class="navbar-brand"><span class="glyphicon glyphicon-home"></span></a>
               <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
               </button>
@@ -76,6 +80,15 @@
                     <button class="btn btn-primary" type="button" onclick="update_image('/test')">Binary</button>
                     <button class="btn btn-primary" type="button" onclick="update_image('/image')">Origin</button>
                     <button class="btn btn-primary" type="button" onclick="update_image('/egde')">Edge Detection</button>
+                </div>
+                <div style="margin-left: 1rem;" class="card-body">
+                    <h1>Contrast Control</h1> 
+                    <div class="btn-group" role="group" aria-label="...">
+                        <button class="btn btn-primary" type="button" onclick="update_image('/cont_plus')">Gamma Adj</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <button class="btn btn-primary" type="button" onclick="update_image('/contrast')">Color Adjust</button>
                 </div>
             </div>
         </div>
