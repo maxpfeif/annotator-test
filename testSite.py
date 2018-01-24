@@ -4,9 +4,12 @@ from flask import make_response
 from flask import request
 import cv2 as cv
 import json
+import numpy as np
 #enables display of detailed error reports for debugging. Remove this when the program is ready for launch
 import cgitb
 cgitb.enable()
+
+
 
 app = Flask(__name__)
 
@@ -55,6 +58,40 @@ def edge():
     response = make_response(buffer.tobytes())
     response.headers['Content-Type'] = 'image/jpg'
     return response
+
+#method for adjusting the color 
+@app.route('/contrast')
+def contrast():
+    img_path = 'sample.jpg'
+    img = cv.imread(img_path)
+    img = cv.resize(img, (320, 240))
+    img[:,:,2] = [[max(pixel - 25, 0) if pixel < 190 else min(pixel + 25, 255) for pixel in row] for row in img[:,:,2]]
+    retval, buffer = cv.imencode('.jpg', img)
+    response = make_response(buffer.tobytes())
+    response.headers['Content-Type'] = 'image/jpg'
+    return response
+
+#method that adjusts the contrast based on the contrast variable 
+@app.route('/cont_plus', methods = ['GET','POST'])
+def cont_plus():
+    gamma = 1.5
+    img_path = 'sample.jpg'
+    img = cv.imread(img_path)
+    img = cv.resize(img, (320, 240))
+    
+    img = cv.cvtColor(img, cv.COLOR_BGR2LAB) 
+    l, a, b = cv.split(img)
+    clahe = cv.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+    cl = clahe.apply(l)
+    img = cv.merge((cl,a,b))
+    img = cv.cvtColor(img, cv.COLOR_LAB2BGR)
+
+    retval, buffer = cv.imencode('.jpg', img)
+    response = make_response(buffer.tobytes())
+    response.headers['Content-Type'] = 'image/jpg'
+    return response
+
+        
 
 
 @app.route('/click', methods =['GET','POST'])
