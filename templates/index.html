@@ -4,19 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Sandbox</title>
-    
     <link href="https://getbootstrap.com/dist/css/bootstrap.min.css" rel="stylesheet">
-
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-
-
-
     <link href="https://getbootstrap.com/docs/4.0/examples/album/album.css" rel="stylesheet">
+    <!-- image update script -->
     <script>
         function update_image(url){
-            var cont_count = 25; //variable for keeping track of the contrast adjustment
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.responseType = "blob";
@@ -31,6 +26,7 @@
                     $("#div1").html(img);
                 }
             }
+            contrast_update('/contrast_update');
             xhr.send();
         }
     </script>
@@ -58,22 +54,36 @@
                 }));
         }
     </script>
-
+    <!-- script to update the contrast status bar --> 
+    <script type="text/javascript">
+        function contrast_update(url){
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            console.log(url);
+            xhr.responseType = "";
+            xhr.onload = function() {
+                console.log(this.response);
+                if (this.response) {
+                    var contrast_bar = 50;
+                    contrast_bar = parseInt(this.response)
+                    console.log(contrast_bar);
+                    $('#progressBar').css('width', contrast_bar+'%');
+                    $('#progressBar').html('contrast = 'contrast_bar+'%');
+                }
+            }
+            xhr.send();
+        }
+    </script>
 </head>
 
 <body>
-   <header>
-          <div class="navbar navbar-dark bg-dark">
+    <header>
+        <div class="navbar navbar-dark bg-dark">
             <div class="container d-flex justify-content-between">
-              <a href="https://www.facebook.com" class="navbar-brand"><span class="glyphicon glyphicon-home"><h2> User Name</h2></span></a>
-
+                <a href="https://www.facebook.com" class="navbar-brand"><span class="glyphicon glyphicon-home"><h2> User Name</h2></span></a>
             </div>
-          </div>
-        </header>
-
-
-
-
+        </div>
+    </header>
     <main role="main" class="container" style="padding-top: 1rem;">
         <div class="row">
             <div class="card" style="margin-top: auto;">
@@ -82,15 +92,15 @@
                         <div class="btn-group" role="group" aria-label="...">
                             <button class="btn btn-default" type="button" onclick="update_image('/image')">Original</button>
                             <button class="btn btn-default" type="button" onclick="update_image('/egde')">Edges</button>
-                            <button class="btn btn-default" type="button" onclick="contrast_adjust('/contrast_plus')">Contrast +</button>
-                            <button class="btn btn-default" type="button" onclick="contrast_adjust('/contrast_minus')">Contrast -</button>
+                            <button class="btn btn-default" type="button" onclick="update_image('/contrast_plus')">Contrast +</button>
+                            <button class="btn btn-default" type="button" onclick="update_image('/contrast_minus')">Contrast -</button>
                         </div>
                     </div>
                     <div class="progress">
-                        <div class="progress-bar bg-info" role="progressbar" style="width: 20%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+                        <div class="progress-bar bg-info" role="progressbar" id="progressBar" style="width: 10%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
-                <div style="margin-left: 1rem; margin-right: 1rem; margin-top: 1rem;" id="div1" onclick="getMousePos()">
+                <div style="margin-left: 1rem; margin-right: 1rem; margin-bottom: 1rem;" id="div1" onclick="getMousePos()">
                     <img src="{{ url_for('image') }}">
                 </div>
             </div>
