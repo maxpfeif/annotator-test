@@ -9,7 +9,7 @@ import numpy as np
 import cgitb
 cgitb.enable()
 
-alpha = 1.0 #simple brightness control
+alpha = 1.0 #simple brightness control, ranges from 0.5 to 2.5 in 0.1 steps.
 app = Flask(__name__)
 
 
@@ -33,7 +33,6 @@ def image():
 def index():
     return render_template('index.html')
 
-#
 #@app.route('/test', methods = ['GET', 'POST'])
 #def test():
 #    img_path = 'sample.jpg'
@@ -62,7 +61,8 @@ def edge():
 @app.route('/contrast_plus')
 def contrast_plus():
     global alpha 
-    alpha += 0.1
+    if alpha < 2.0:
+        alpha += 0.1
     img_path = 'sample.jpg'
     img = cv.imread(img_path)
     img = cv.resize(img, (320, 240))
@@ -74,12 +74,13 @@ def contrast_plus():
     response = make_response(buffer.tobytes())
     response.headers['Content-Type'] = 'image/jpg'
     return response
-
+   
 #this module decriments the image contrast 
 @app.route('/contrast_minus')
 def contrast_minus():
-    global alpha 
-    alpha -= 0.1
+    global alpha
+    if alpha > 0.5:
+        alpha -= 0.1
     img_path = 'sample.jpg'
     img = cv.imread(img_path)
     img = cv.resize(img, (320, 240))
@@ -92,35 +93,21 @@ def contrast_minus():
     response.headers['Content-Type'] = 'image/jpg'
     return response
 
+#calling this module will convert alpha into the current contrast bar display
+@app.route('/contrast_update', methods =['GET','POST'])
+def contrast_update():
+    #the contrast bar returns a number between 0 and 100 that represents the current level of contrast adjustment. 
+    if alpha < 1.0:
+        contrast_bar = (alpha - 0.5)*100
+    else: 
+        contrast_bar = alpha*50
+    print alpha 
+    print contrast_bar
+    print type(contrast_bar)
+    return str(contrast_bar)
+
 #original contrast correcting code 
 #img[:,:,2] = [[max(pixel - 25, 0) if pixel < 190 else min(pixel + 25, 255) for pixel in row] for row in img[:,:,2]]
-
-#method that adjusts the contrast based on the contrast variable 
-@app.route('/cont_plus', methods = ['GET','POST'])
-def cont_plus():
-    gamma = 1.5
-    inv_gamma = 1/gamma
-    img_path = 'sample.jpg'
-    img = cv.imread(img_path)
-    img = cv.resize(img, (320, 240))
-    #convert the color profile to LAB 
-    img = cv.cvtColor(img, cv.COLOR_BGR2LAB) 
-    #split the channels into Lightness, a (green to magenta) and b (blue to yellow)
-    l, a, b = cv.split(img)
-    #use CLAHE process 
-    # clahe = cv.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
-    # cl = clahe.apply(l)
-    #try just adjusting the 'lightness' only
-    #cl = l / np.uint(gamma)
-    #re-merge the results
-    img = cv.merge((cl,a,b))
-    img = cv.cvtColor(img, cv.COLOR_LAB2BGR)
-
-    retval, buffer = cv.imencode('.jpg', img)
-    response = make_response(buffer.tobytes())
-    response.headers['Content-Type'] = 'image/jpg'
-    return response
-
 
 @app.route('/click', methods =['GET','POST'])
 def click():
