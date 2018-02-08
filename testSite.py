@@ -9,26 +9,43 @@ import numpy as np
 import cgitb
 cgitb.enable()
 
-#might need to import the rect function 
+#----------------------------------------------------------*
+#---------------------GLOBAL VARIABLES---------------------*
+#----------------------------------------------------------*
 
+#contrast control variable
 alpha = 1.0 #simple brightness control, ranges from 0.5 to 2.5 in 0.1 steps.
-# img_path = 'sample.jpg' #image path used everywhere in script
+alpha_min = 0.5   
+alpha_max = 1.5
+alpha_range = int(alpha_max - alpha_min)*10
 
-#standard image load informtion
-img_path = 'volvoExample.png' #sample image path
-img = cv.imread(img_path)
+#edge detection boolean 
+edges = False 
+#zoom control variables 
 disp_W = 600 #width to size displayed images to 
 disp_H = 330 #height to size displayed images to 
-img = cv.resize(img, (disp_W, disp_H))
-
-#zoom control variables 
-img_adj = img #image reference for keeping track of zoom and pan adjustments
 zoom = 1 #keeps track of our zoom power
 zoom_step = 1.5
 dX = disp_W/2 #delta x, used for keeping track of zoom center
 dY = disp_H/2 # delta y, used for keeping track of zoom center
+#standard image load informtion
+img_path = 'volvoExample.png' #sample image path
+#the img object stores the original image, with any contrast of filters made to it
+img = cv.imread(img_path)
+img = cv.resize(img, (disp_W, disp_H))
+img_adj = img #image reference for keeping track contrast adjustments
+
+#img_alpha={}
+#for x in range(1,alpha_range):
+#    global img
+    #iterate through the alpha values and create images for each possible contrast setting
+#    img_alpha[(x)[:,:,0]] = [[max(pixel*alpha, 0) if pixel*alpha < 256 else min(pixel*alpha, 255) for pixel in row] for row in img[:,:,0]]
+#    img_alpha["{0}".format(x)[:,:,1]] = [[max(pixel*alpha, 0) if pixel*alpha < 256 else min(pixel*alpha, 255) for pixel in row] for row in img[:,:,1]]
+#    img_alpha["{0}".format(x)[:,:,2]]= [[max(pixel*alpha, 0) if pixel*alpha < 256 else min(pixel*alpha, 255) for pixel in row] for row in img[:,:,2]]
+
 
 app = Flask(__name__)
+
 
 #initialize the HTML page upon launching the script. 
 @app.route('/')
@@ -88,14 +105,26 @@ def zoomer(x, y, zoom):
         img_adj = cv.resize(img_adj, (disp_W, disp_H), 0,0,1)
         return img_adj  
 
+#Primary Contrast Control Extension
+#   Updates img to reflect the current global alpha setting 
+def contraster():
+    global alpha, img
+    #iterate through the pixels and multiply the individual pixel values by the constrast adjusting aplha
+    img[:,:,0] = [[max(pixel*alpha, 0) if pixel*alpha < 256 else min(pixel*alpha, 255) for pixel in row] for row in img[:,:,0]]
+    img[:,:,1] = [[max(pixel*alpha, 0) if pixel*alpha < 256 else min(pixel*alpha, 255) for pixel in row] for row in img[:,:,1]]
+    img[:,:,2] = [[max(pixel*alpha, 0) if pixel*alpha < 256 else min(pixel*alpha, 255) for pixel in row] for row in img[:,:,2]]
+    return img
+
 #intial and original image update module 
 @app.route('/image', methods = ['GET', 'POST'])
 def image():
-    global img, img_adj, alpha, zoom 
+    global img, alpha, zoom, dX, dY, edges 
     #reset the contrast and zoom when returning to original state
     alpha = 1.0 
     zoom = 1
-    img_adj = img
+    edges = False
+    dX = disp_W/2 
+    dY = disp_H/2
     img = cv.imread(img_path)
     img = cv.resize(img, (disp_W, disp_H))
     if request.method == "POST":
@@ -138,12 +167,19 @@ def pan_ctrl():
 #simple method for processing edge detection. 
 @app.route('/egde')
 def edge():
-    global img
-    img = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
-    img = cv.Canny(img,50,150)
+    global img, edges 
+    if(edges):
+        edges = False
+        img = cv.imread(img_path)
+        img = cv.resize(img, (disp_W, disp_H))
+        img = contraster()        
+    else: 
+        edges = True
+        img = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
+        img = cv.Canny(img,50,150)
     #makes sure the zoom is reflective of current state with edges on
-    img = zoomer()
-    return responder('image/jpg', img)
+    img_adj = zoomer(dX, dY, zoom)
+    return responder('image/jpg', img_adj)
 
 #this module incriments the contrast
 @app.route('/contrast_plus')
@@ -152,11 +188,9 @@ def contrast_plus():
     global img
     if alpha < 2.0:
         alpha += 0.1
-    #iterate through the pixels and multiply the individual pixel values by the constrast adjusting aplha
-    img[:,:,0] = [[max(pixel*alpha, 0) if pixel*alpha < 256 else min(pixel*alpha, 255) for pixel in row] for row in img[:,:,0]]
-    img[:,:,1] = [[max(pixel*alpha, 0) if pixel*alpha < 256 else min(pixel*alpha, 255) for pixel in row] for row in img[:,:,1]]
-    img[:,:,2] = [[max(pixel*alpha, 0) if pixel*alpha < 256 else min(pixel*alpha, 255) for pixel in row] for row in img[:,:,2]]
-    return responder('image/jpg', img)
+    img = contraster()
+    img_adj = zoomer(dX, dY, zoom)
+    return responder('image/jpg', img_adj)
    
 #this module decriments the image contrast 
 @app.route('/contrast_minus')
@@ -165,11 +199,9 @@ def contrast_minus():
     global img
     if alpha > 0.5:
         alpha -= 0.1
-    #iterate through the pixels and multiply the individual pixel values by the constrast adjusting aplha
-    img[:,:,0] = [[max(pixel*alpha, 0) if pixel*alpha < 256 else min(pixel*alpha, 255) for pixel in row] for row in img[:,:,0]]
-    img[:,:,1] = [[max(pixel*alpha, 0) if pixel*alpha < 256 else min(pixel*alpha, 255) for pixel in row] for row in img[:,:,1]]
-    img[:,:,2] = [[max(pixel*alpha, 0) if pixel*alpha < 256 else min(pixel*alpha, 255) for pixel in row] for row in img[:,:,2]]
-    return responder('image/jpg', img)
+    img = contraster()
+    img_adj = zoomer(dX, dY, zoom)
+    return responder('image/jpg', img_adj)
 
 #calling this module will convert alpha into the current contrast bar display
 @app.route('/contrast_update', methods =['GET','POST'])
@@ -179,9 +211,6 @@ def contrast_update():
         contrast_bar = (alpha - 0.5)*100
     else: 
         contrast_bar = alpha*50
-    print alpha 
-    print contrast_bar
-    print type(contrast_bar)
     return str(contrast_bar)
 
 if __name__ == '__main__':
