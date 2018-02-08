@@ -30,6 +30,7 @@
             xhr.send();
         }
     </script>
+ <!--
     <script>
         function getMousePos(event) {
             var e = event || window.event;
@@ -54,6 +55,76 @@
                 }));
         }
     </script>
+-->
+
+    <script>
+        function zoom(event) {
+            console.log('scrolling may begin!');
+            var e = event || window.event; 
+            var x = e.clientX;
+            var y = e.clientY;
+            console.log(x);
+            console.log(y);
+            var dz = e.deltaY;
+            if(dz > 0) {
+                dz = 1; 
+            } if (dz < 0) {
+                dz = -1; 
+            }
+            var e = event || window.event; 
+            var xhr = new XMLHttpRequest();
+            var zoom_dir;
+            var divPos = {};   //might not need this 
+            var offset = $("#div1").offset();
+            console.log(offset.left);
+            console.log(offset.top);
+            console.log(x);
+            console.log(y);
+            xhr.open('POST', '/zoom_ctrl', true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.responseType = "blob";
+            xhr.onload = function() {
+                if (this.status == 200) {
+                    var blob = this.response;
+                    var img = document.createElement("img");
+                    img.onload = function(e) {
+                        window.URL.revokeObjectURL(img.src);
+                    };
+                    img.src = window.URL.createObjectURL(blob);
+                    $("#div1").html(img);
+                }
+            }
+            xhr.send(JSON.stringify({'x': e.pageX - offset.left, 'y': e.pageY - offset.top, 'dz': dz})); 
+        }
+    </script>
+    <script type="text/javascript">
+        document.onkeydown = pan;
+        function pan(event) {
+            console.log('paning initialized!')
+            var e = event || window.event;
+            var kC = e.keyCode;
+            console.log("kC = ", kC);
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/pan_ctrl', true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            xhr.responseType = "blob"; 
+            xhr.onload = function() {
+                if (this.status == 200) {
+                    var blob = this.response;
+                    var img = document.createElement("img");
+                    img.onload = function(e) {
+                        window.URL.revokeObjectURL(img.src);
+                    };
+                    img.src = window.URL.createObjectURL(blob);
+                    $("#div1").html(img);
+                }
+            }
+            xhr.send(JSON.stringify({'kC': kC}));
+        }
+    </script>
+
+
     <!-- script to update the contrast status bar --> 
     <script type="text/javascript">
         function contrast_update(url){
@@ -95,13 +166,23 @@
                             <button class="btn btn-default" type="button" onclick="update_image('/contrast_minus')">Contrast -</button>
                         </div>
                         <div class="btn-group" role="group" aria-label="...">
-                            <button class="btn btn-default" type="button" onclick="update_image('/zoom_in')">Zoom +</button>
-                            <button class="btn btn-default" type="button" onclick="update_image('/image')">Reset</button>
-                            <button class="btn btn-default" type="button" onclick="update_image('/zoom_out')">Zoom -</button>
-                        </div>                 
+                            <button class="btn btn-default" type="button" onclick="update_image('/zoom_in')">Box</button>
+                            <button class="btn btn-default" type="button" onclick="update_image('/image')">Label Options</button>
+                            <button class="btn btn-default" type="button" onclick="update_image('/zoom_out')">Set</button>
+                        </div> 
+                        <div class="btn-group" role="group" aria-label="...">
+                            <button class="btn btn-default" type="button" onclick="update_image('/zoom_in')">Box</button>
+                            <button class="btn btn-default" type="button" onclick="update_image('/image')">Label Options</button>
+                        </div> 
                     </div> 
+                    <div class="btn-toolbar" role="toolbar" aria-label="...">
+                        <div class="input-group" style="margin-top: 1rem">
+                                <span class="input-group-addon" id="btnGroupAddon">Label:</span>
+                                <input type="text" class="form-control" placeholder="Enter Label ID" aria-describedby="btnGroupAddon">
+                        </div> 
+                    </div>
                 </div>
-                <div style="margin-left: 1rem; margin-right: 1rem; margin-bottom: 1rem;" id="div1" onclick="getMousePos()">
+                <div style="margin-left: 1rem; margin-right: 1rem; margin-bottom: 1rem;" id="div1" onclick="getMousePos()" onmousewheel="zoom()" >
                     <img src="{{ url_for('image') }}">
                 </div>
                 <div class="progress">
